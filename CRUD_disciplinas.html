@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD de Disciplinas Simples</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        h1 { color: #333; }
+        
+        .form-group { margin-bottom: 15px; background: #f4f4f4; padding: 15px; border-radius: 5px; }
+        input { padding: 8px; margin-right: 10px; border: 1px solid #ccc; border-radius: 4px; width: 200px; }
+        button { padding: 8px 15px; cursor: pointer; border: none; border-radius: 4px; color: white; }
+        .btn-save { background-color: #28a745; }
+        .btn-cancel { background-color: #6c757d; display: none; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        
+        .btn-edit { background-color: #ffc107; color: #000; margin-right: 5px; }
+        .btn-delete { background-color: #dc3545; }
+    </style>
+</head>
+<body>
+
+    <h1>Gerenciador de Disciplinas</h1>
+
+    <div class="form-group">
+        <input type="hidden" id="idDisciplina"> <input type="text" id="nome" placeholder="Nome da Disciplina (ex: Java)" required>
+        <input type="text" id="professor" placeholder="Nome do Professor" required>
+        
+        <button onclick="salvar()" class="btn-save" id="btnSalvar">Adicionar</button>
+        <button onclick="cancelarEdicao()" class="btn-cancel" id="btnCancelar">Cancelar</button>
+    </div>
+
+    <table id="tabelaDisciplinas">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Disciplina</th>
+                <th>Professor</th>
+                <th style="width: 150px;">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            </tbody>
+    </table>
+
+    <script>
+
+        let disciplinas = JSON.parse(localStorage.getItem('db_disciplinas')) || [];
+        
+        atualizarTabela();
+
+        function salvar() {
+            const id = document.getElementById('idDisciplina').value;
+            const nome = document.getElementById('nome').value;
+            const professor = document.getElementById('professor').value;
+
+            if (!nome || !professor) {
+                alert("Por favor, preencha todos os campos!");
+                return;
+            }
+
+            if (id) {
+
+                const index = disciplinas.findIndex(d => d.id == id);
+                disciplinas[index] = { id: Number(id), nome, professor };
+            } else {
+
+                const novoItem = {
+                    id: Date.now(),
+                    nome: nome,
+                    professor: professor
+                };
+                disciplinas.push(novoItem);
+            }
+
+            salvarNoStorage();
+            limparFormulario();
+            atualizarTabela();
+        }
+
+        function atualizarTabela() {
+            const tbody = document.querySelector('#tabelaDisciplinas tbody');
+            tbody.innerHTML = '';
+
+            disciplinas.forEach(d => {
+                const linha = `
+                    <tr>
+                        <td>${d.id}</td>
+                        <td>${d.nome}</td>
+                        <td>${d.professor}</td>
+                        <td>
+                            <button class="btn-edit" onclick="prepararEdicao(${d.id})">Editar</button>
+                            <button class="btn-delete" onclick="deletar(${d.id})">Excluir</button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += linha;
+            });
+        }
+
+        function deletar(id) {
+            if(confirm('Tem certeza que deseja excluir esta disciplina?')) {
+                disciplinas = disciplinas.filter(d => d.id !== id);
+                salvarNoStorage();
+                atualizarTabela();
+            }
+        }
+
+        function prepararEdicao(id) {
+            const item = disciplinas.find(d => d.id === id);
+            
+            document.getElementById('idDisciplina').value = item.id;
+            document.getElementById('nome').value = item.nome;
+            document.getElementById('professor').value = item.professor;
+            document.getElementById('btnSalvar').innerText = 'Atualizar';
+            document.getElementById('btnCancelar').style.display = 'inline-block';
+        }
+
+        function cancelarEdicao() {
+            limparFormulario();
+        }
+
+        function salvarNoStorage() {
+            localStorage.setItem('db_disciplinas', JSON.stringify(disciplinas));
+        }
+
+        function limparFormulario() {
+            document.getElementById('idDisciplina').value = '';
+            document.getElementById('nome').value = '';
+            document.getElementById('professor').value = '';
+            
+            document.getElementById('btnSalvar').innerText = 'Adicionar';
+            document.getElementById('btnCancelar').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
