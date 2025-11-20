@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Acadêmico Simples</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; max-width: 900px; margin: 0 auto; background-color: #f9f9f9; }
+        h2 { color: #333; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top: 40px; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .form-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+        input { padding: 10px; border: 1px solid #ccc; border-radius: 4px; flex: 1; }
+        button { padding: 10px 20px; cursor: pointer; border: none; border-radius: 4px; color: white; font-weight: bold; }
+        .btn-save { background-color: #28a745; }
+        .btn-cancel { background-color: #6c757d; display: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #eee; padding: 12px; text-align: left; }
+        th { background-color: #f1f1f1; }
+        .btn-edit { background-color: #ffc107; color: #000; padding: 5px 10px; margin-right: 5px; font-size: 0.9em; }
+        .btn-delete { background-color: #dc3545; padding: 5px 10px; font-size: 0.9em; }
+        .search-bar { margin-bottom: 15px; padding: 10px; background-color: #e9ecef; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Gerenciar Disciplinas</h2>
+        <div class="form-row">
+            <input type="hidden" id="idDisciplina">
+            <input type="text" id="nomeDisciplina" placeholder="Nome da Disciplina">
+            <input type="text" id="profDisciplina" placeholder="Professor">
+            <button onclick="salvarDisciplina()" class="btn-save" id="btnSalvarDisc">Salvar</button>
+            <button onclick="cancelarDisc()" class="btn-cancel" id="btnCancelarDisc">Cancelar</button>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Disciplina</th>
+                    <th>Professor</th>
+                    <th style="width: 140px;">Ações</th>
+                </tr>
+            </thead>
+            <tbody id="tabelaDisciplinas"></tbody>
+        </table>
+    </div>
+
+    <div class="container">
+        <h2>Gerenciar Alunos</h2>
+        
+        <div class="search-bar">
+            <input type="text" id="buscaAluno" onkeyup="buscarAluno()" placeholder="Pesquisar aluno por nome ou matrícula...">
+        </div>
+
+        <div class="form-row">
+            <input type="hidden" id="idAluno">
+            <input type="text" id="nomeAluno" placeholder="Nome Completo">
+            <input type="text" id="matriculaAluno" placeholder="Matrícula">
+            <input type="email" id="emailAluno" placeholder="E-mail">
+            <button onclick="salvarAluno()" class="btn-save" id="btnSalvarAluno">Salvar</button>
+            <button onclick="cancelarAluno()" class="btn-cancel" id="btnCancelarAluno">Cancelar</button>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Matrícula</th>
+                    <th>Nome</th>
+                    <th>E-mail</th>
+                    <th style="width: 140px;">Ações</th>
+                </tr>
+            </thead>
+            <tbody id="tabelaAlunos"></tbody>
+        </table>
+    </div>
+
+    <script>
+        let disciplinas = JSON.parse(localStorage.getItem('db_disciplinas')) || [];
+        let alunos = JSON.parse(localStorage.getItem('db_alunos')) || [];
+
+        renderDisciplinas();
+        renderAlunos();
+
+        function salvarDisciplina() {
+            const id = document.getElementById('idDisciplina').value;
+            const nome = document.getElementById('nomeDisciplina').value;
+            const prof = document.getElementById('profDisciplina').value;
+
+            if (!nome || !prof) return alert("Preencha todos os campos");
+
+            if (id) {
+                const index = disciplinas.findIndex(d => d.id == id);
+                disciplinas[index] = { id: Number(id), nome, prof };
+            } else {
+                disciplinas.push({ id: Date.now(), nome, prof });
+            }
+
+            localStorage.setItem('db_disciplinas', JSON.stringify(disciplinas));
+            cancelarDisc();
+            renderDisciplinas();
+        }
+
+        function renderDisciplinas() {
+            const tbody = document.getElementById('tabelaDisciplinas');
+            tbody.innerHTML = '';
+            disciplinas.forEach(d => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${d.nome}</td>
+                        <td>${d.prof}</td>
+                        <td>
+                            <button class="btn-edit" onclick="editarDisc(${d.id})">Edit</button>
+                            <button class="btn-delete" onclick="deletarDisc(${d.id})">Excl</button>
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        function editarDisc(id) {
+            const item = disciplinas.find(d => d.id === id);
+            document.getElementById('idDisciplina').value = item.id;
+            document.getElementById('nomeDisciplina').value = item.nome;
+            document.getElementById('profDisciplina').value = item.prof;
+            document.getElementById('btnSalvarDisc').innerText = 'Atualizar';
+            document.getElementById('btnCancelarDisc').style.display = 'inline-block';
+        }
+
+        function deletarDisc(id) {
+            if(confirm('Excluir disciplina?')) {
+                disciplinas = disciplinas.filter(d => d.id !== id);
+                localStorage.setItem('db_disciplinas', JSON.stringify(disciplinas));
+                renderDisciplinas();
+            }
+        }
+
+        function cancelarDisc() {
+            document.getElementById('idDisciplina').value = '';
+            document.getElementById('nomeDisciplina').value = '';
+            document.getElementById('profDisciplina').value = '';
+            document.getElementById('btnSalvarDisc').innerText = 'Salvar';
+            document.getElementById('btnCancelarDisc').style.display = 'none';
+        }
+
+        function salvarAluno() {
+            const id = document.getElementById('idAluno').value;
+            const nome = document.getElementById('nomeAluno').value;
+            const matricula = document.getElementById('matriculaAluno').value;
+            const email = document.getElementById('emailAluno').value;
+
+            if (!nome || !matricula || !email) return alert("Preencha todos os campos");
+
+            if (id) {
+                const index = alunos.findIndex(a => a.id == id);
+                alunos[index] = { id: Number(id), nome, matricula, email };
+            } else {
+                alunos.push({ id: Date.now(), nome, matricula, email });
+            }
+
+            localStorage.setItem('db_alunos', JSON.stringify(alunos));
+            cancelarAluno();
+            renderAlunos();
+        }
+
+        function renderAlunos(lista = alunos) {
+            const tbody = document.getElementById('tabelaAlunos');
+            tbody.innerHTML = '';
+            lista.forEach(a => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${a.matricula}</td>
+                        <td>${a.nome}</td>
+                        <td>${a.email}</td>
+                        <td>
+                            <button class="btn-edit" onclick="editarAluno(${a.id})">Edit</button>
+                            <button class="btn-delete" onclick="deletarAluno(${a.id})">Excl</button>
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        function buscarAluno() {
+            const termo = document.getElementById('buscaAluno').value.toLowerCase();
+            const filtrados = alunos.filter(a => 
+                a.nome.toLowerCase().includes(termo) || 
+                a.matricula.includes(termo)
+            );
+            renderAlunos(filtrados);
+        }
+
+        function editarAluno(id) {
+            const item = alunos.find(a => a.id === id);
+            document.getElementById('idAluno').value = item.id;
+            document.getElementById('nomeAluno').value = item.nome;
+            document.getElementById('matriculaAluno').value = item.matricula;
+            document.getElementById('emailAluno').value = item.email;
+            document.getElementById('btnSalvarAluno').innerText = 'Atualizar';
+            document.getElementById('btnCancelarAluno').style.display = 'inline-block';
+        }
+
+        function deletarAluno(id) {
+            if(confirm('Excluir aluno?')) {
+                alunos = alunos.filter(a => a.id !== id);
+                localStorage.setItem('db_alunos', JSON.stringify(alunos));
+                buscarAluno(); 
+            }
+        }
+
+        function cancelarAluno() {
+            document.getElementById('idAluno').value = '';
+            document.getElementById('nomeAluno').value = '';
+            document.getElementById('matriculaAluno').value = '';
+            document.getElementById('emailAluno').value = '';
+            document.getElementById('btnSalvarAluno').innerText = 'Salvar';
+            document.getElementById('btnCancelarAluno').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
